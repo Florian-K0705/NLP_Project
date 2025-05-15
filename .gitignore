@@ -1,2 +1,4 @@
 /src/main.py
 /data/
+/src/data/__py_cache__/
+src/transformers/__pycache__/
