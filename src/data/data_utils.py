@@ -174,21 +174,59 @@ class Emotions(Data):
 ##############################################################################################################################################
 
 
-## TODO
+class AppReviewsDataset(MyDataset):
+    def __init__(self, data, labels):
+        super().__init__(data, labels)
+
 class AppReviews(Data):
 
-    def __init__(self, path):
-        pass
+    def __init__(self, path, dataset_type="train"):
+        self.dataset_type = dataset_type
+        
+        train_path = os.path.join(path, "train.tsv")
+        test_path = os.path.join(path, "test.tsv")
+        val_path = os.path.join(path, "val.tsv")
 
-    def get_numpy_data():
-        pass
+        self.train_data = pd.read_csv(train_path, sep="\t")
+        self.test_data = pd.read_csv(test_path, sep="\t")
+        self.val_data = pd.read_csv(val_path, sep="\t")
 
-    def get_pytorch_dataset():
-        pass
+    def get_numpy_data(self):
+        if self.dataset_type == "train":
+            corpus = self.train_data["text"].tolist()
+            labels = self.train_data["label"].tolist()
+        elif self.dataset_type == "test":
+            corpus = self.test_data["text"].tolist()
+            labels = self.test_data["label"].tolist()
+        elif self.dataset_type == "val":
+            corpus = self.val_data["text"].tolist()
+            labels = self.val_data["label"].tolist()
+        else:
+            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
+        
+        return corpus, labels
+
+    def get_pytorch_dataset(self):
+        if self.dataset_type == "train":
+            corpus = self.train_data["text"].tolist()
+            labels = self.train_data["label"].tolist()
+        elif self.dataset_type == "test":
+            corpus = self.test_data["text"].tolist()
+            labels = self.test_data["label"].tolist()
+        elif self.dataset_type == "val":
+            corpus = self.val_data["text"].tolist()
+            labels = self.val_data["label"].tolist()
+        else:
+            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
+        
+        return AppReviewsDataset(corpus, labels)
+    
+
+##############################################################################################################################################
 
 if __name__ == "__main__":
 
-    data = Emotions("/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/Emotions", dataset_type="val")
+    data = GoEmotions("/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/goEmotions/data", dataset_type="test")
 
     ds = data.get_pytorch_dataset()
 
