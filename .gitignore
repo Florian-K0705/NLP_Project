@@ -2,3 +2,6 @@
 /data/
 /src/data/__py_cache__/
 src/transformers/__pycache__/
+src/lstm/__pycache__/
+src/classic/__pycache__/
+src/preprocessing/__pycache__/
