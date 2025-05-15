@@ -63,7 +63,7 @@ class GoEmotions(Data):
         
         train_path = os.path.join(path, "train.tsv")
         test_path = os.path.join(path, "test.tsv")
-        val_path = os.path.join(path, "dev.tsv")
+        val_path = os.path.join(path, "val.tsv")
 
         self.train_data = pd.read_csv(train_path, sep="\t")
         self.test_data = pd.read_csv(test_path, sep="\t")
@@ -115,20 +115,55 @@ class GoEmotions(Data):
 ##############################################################################################################################################
 
 
-## TODO
+class EmotionsDataset(MyDataset):
+    def __init__(self, data, labels):
+        super().__init__(data, labels)
+
+
 class Emotions(Data):
 
-    def __init__(self, path):
-        pass
+    def __init__(self, path, dataset_type="train"):
+        self.dataset_type = dataset_type
+        
+        train_path = os.path.join(path, "train.tsv")
+        test_path = os.path.join(path, "test.tsv")
+        val_path = os.path.join(path, "val.tsv")
 
-    def get_numpy_data():
-        pass
+        self.train_data = pd.read_csv(train_path, sep="\t")
+        self.test_data = pd.read_csv(test_path, sep="\t")
+        self.val_data = pd.read_csv(val_path, sep="\t")
 
-    def get_pytorch_dataset():
-        pass
+        self.classes = open(os.path.join(path, "emotions.txt"), "r").read().splitlines()
 
+    def get_numpy_data(self):
+        if self.dataset_type == "train":
+            corpus = self.train_data["text"].tolist()
+            labels = self.train_data["label"].tolist()
+        elif self.dataset_type == "test":
+            corpus = self.test_data["text"].tolist()
+            labels = self.test_data["label"].tolist()
+        elif self.dataset_type == "val":
+            corpus = self.val_data["text"].tolist()
+            labels = self.val_data["label"].tolist()
+        else:
+            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
+        
+        return corpus, labels
 
-
+    def get_pytorch_dataset(self):
+        if self.dataset_type == "train":
+            corpus = self.train_data["text"].tolist()
+            labels = self.train_data["label"].tolist()
+        elif self.dataset_type == "test":
+            corpus = self.test_data["text"].tolist()
+            labels = self.test_data["label"].tolist()
+        elif self.dataset_type == "val":
+            corpus = self.val_data["text"].tolist()
+            labels = self.val_data["label"].tolist()
+        else:
+            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
+        
+        return EmotionsDataset(corpus, labels)
 
 
 
@@ -153,16 +188,9 @@ class AppReviews(Data):
 
 if __name__ == "__main__":
 
-    data = GoEmotions(path="/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/goEmotions/data")
-    x, y = data.get_numpy_data()
-    dataset = data.get_pytorch_dataset()
+    data = Emotions("/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/Emotions", dataset_type="val")
 
-    hist = np.zeros(len(data.classes))
+    ds = data.get_pytorch_dataset()
 
-    for i in range(len(x)):
-        hist[dataset[i][1]] += 1
+    print(ds[0])
 
-
-    print(hist)
-    print(np.sum(hist))
-    print(len(dataset))
