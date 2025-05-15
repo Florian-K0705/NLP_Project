@@ -208,14 +208,14 @@ class AppReviews(Data):
 
     def get_pytorch_dataset(self):
         if self.dataset_type == "train":
-            corpus = self.train_data["text"].tolist()
-            labels = self.train_data["label"].tolist()
+            corpus = self.train_data["review"].tolist()
+            labels = self.train_data["star"].tolist()
         elif self.dataset_type == "test":
-            corpus = self.test_data["text"].tolist()
-            labels = self.test_data["label"].tolist()
+            corpus = self.test_data["review"].tolist()
+            labels = self.test_data["star"].tolist()
         elif self.dataset_type == "val":
-            corpus = self.val_data["text"].tolist()
-            labels = self.val_data["label"].tolist()
+            corpus = self.val_data["review"].tolist()
+            labels = self.val_data["star"].tolist()
         else:
             raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
         
@@ -224,11 +224,4 @@ class AppReviews(Data):
 
 ##############################################################################################################################################
 
-if __name__ == "__main__":
-
-    data = GoEmotions("/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/goEmotions/data", dataset_type="test")
-
-    ds = data.get_pytorch_dataset()
-
-    print(ds[0])
 
