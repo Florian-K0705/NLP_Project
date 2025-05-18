@@ -1,39 +1,6 @@
-import numpy as np
 import os
 import pandas as pd
-import torch
 from torch.utils.data import Dataset
-
-
-
-## Die abstrakte Klasse Data definiert alle Methoden, die wir zum Laden der Daten brauchen. Dabei sollen die Daten in 
-## beliegiger Form (z.B. numpy array, torch Dataset) zurückgegeben werden können.
-class Data():
-    def __init__(self, path):
-        pass
-
-    def get_numpy_data():
-        pass
-
-    def get_pytorch_dataset():
-        pass
-
-## Die abstrakte Klasse MyDataset definiert wie die Pytorch Dataset Klasse aufgebaut ist.
-## Sie wird von den konkreten Dataset-Klassen (z.B. GoEmotionsDataset) geerbt.
-## Letztlich brauchen wir nur die MyDataset-Klasse, um die Daten in einem Pytorch Dataset-Format zurückzugeben, aber der übersichtilicheit halber
-## haben wir die MyDataset-Klasse und die GoEmotionsDataset-Klasse, etc. getrennt.
-class MyDataset(Dataset):
-    def __init__(self, data, labels):
-        self.data = data
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        text = self.data[idx]
-        label = self.labels[idx]
-        return text, label
 
 
 
@@ -43,68 +10,57 @@ class MyDataset(Dataset):
 
 
 
+class GoEmotionsDataset(Dataset):
 
-class GoEmotionsDataset(MyDataset):
-    def __init__(self, data, labels):
-        super().__init__(data, labels)
+    def __init__(self, path, split="train"):
+        super().__init__()
 
-
-class GoEmotions(Data):
-
-    ## TODO
-    # Es gibt Sätze wie: "I'm sure she was just jealous of [NAME]...", wo eine Maske wie [NAME] vorkommt.
-    # Das ist ein Problem, weil wir die Daten nicht so einfach tokenisieren können.
-    # denn aus [NAME] wird dann { '[', 'NAME', ']', '...' }
-    
-
-    def __init__(self, path, dataset_type="train"):
-
-        self.dataset_type = dataset_type
-        
-        train_path = os.path.join(path, "train.tsv")
-        test_path = os.path.join(path, "test.tsv")
-        val_path = os.path.join(path, "val.tsv")
-
-        self.train_data = pd.read_csv(train_path, sep="\t")
-        self.test_data = pd.read_csv(test_path, sep="\t")
-        self.val_data = pd.read_csv(val_path, sep="\t")
 
         self.classes = open(os.path.join(path, "emotions.txt"), "r").read().splitlines()
 
-    def get_numpy_data(self):
+        if split == "train":
 
-        if self.dataset_type == "train":
-            corpus = self.train_data["text"].tolist()
-            labels = self.train_data["labels"].tolist()
-        elif self.dataset_type == "test":
-            corpus = self.test_data["text"].tolist()
-            labels = self.test_data["labels"].tolist()
-        elif self.dataset_type == "val":
-            corpus = self.val_data["text"].tolist()
-            labels = self.val_data["labels"].tolist()
+            train_path = os.path.join(path, "train.tsv")
+
+            train_data = pd.read_csv(train_path, sep="\t")
+
+            self.corpus = train_data["text"].tolist()
+            self.labels = train_data["labels"].tolist()
+
+            self.length = len(self.corpus)
+
+        elif split == "test":
+
+            test_path = os.path.join(path, "test.tsv")
+            
+            test_data = pd.read_csv(test_path, sep="\t")
+
+            self.corpus = test_data["text"].tolist()
+            self.labels = test_data["labels"].tolist()
+
+            self.length = len(self.corpus)
+
+        elif split == "val":
+
+            val_path = os.path.join(path, "val.tsv")
+            
+            val_data = pd.read_csv(val_path, sep="\t")
+
+            self.corpus = val_data["text"].tolist()
+            self.labels = val_data["labels"].tolist()
+
+            self.length = len(self.corpus)
         else:
             raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
         
-        return corpus, labels
+    def __len__(self):
+        return self.length
+    
+    def __getitem__(self, idx):
+        text = self.corpus[idx]
+        label = self.labels[idx]
 
-
-    def get_pytorch_dataset(self):
-        
-        if self.dataset_type == "train":
-            corpus = self.train_data["text"].tolist()
-            labels = self.train_data["labels"].tolist()
-        elif self.dataset_type == "test":
-            corpus = self.test_data["text"].tolist()
-            labels = self.test_data["labels"].tolist()
-        elif self.dataset_type == "val":
-            corpus = self.val_data["text"].tolist()
-            labels = self.val_data["labels"].tolist()
-        else:
-            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
-        
-        return GoEmotionsDataset(corpus, labels)
-
-
+        return text, label
 
 
 
@@ -114,59 +70,56 @@ class GoEmotions(Data):
 ###############################################         Emotions       #######################################################################
 ##############################################################################################################################################
 
+class EmotionsDataset(Dataset):
 
-class EmotionsDataset(MyDataset):
-    def __init__(self, data, labels):
-        super().__init__(data, labels)
-
-
-class Emotions(Data):
-
-    def __init__(self, path, dataset_type="train"):
-        self.dataset_type = dataset_type
-        
-        train_path = os.path.join(path, "train.tsv")
-        test_path = os.path.join(path, "test.tsv")
-        val_path = os.path.join(path, "val.tsv")
-
-        self.train_data = pd.read_csv(train_path, sep="\t")
-        self.test_data = pd.read_csv(test_path, sep="\t")
-        self.val_data = pd.read_csv(val_path, sep="\t")
+    def __init__(self, path, split="train"):
+        super().__init__()
 
         self.classes = open(os.path.join(path, "emotions.txt"), "r").read().splitlines()
 
-    def get_numpy_data(self):
-        if self.dataset_type == "train":
-            corpus = self.train_data["text"].tolist()
-            labels = self.train_data["label"].tolist()
-        elif self.dataset_type == "test":
-            corpus = self.test_data["text"].tolist()
-            labels = self.test_data["label"].tolist()
-        elif self.dataset_type == "val":
-            corpus = self.val_data["text"].tolist()
-            labels = self.val_data["label"].tolist()
+        if split == "train":
+
+            train_path = os.path.join(path, "train.tsv")
+
+            train_data = pd.read_csv(train_path, sep="\t")
+
+            self.corpus = train_data["text"].tolist()
+            self.labels = train_data["label"].tolist()
+
+            self.length = len(self.corpus)
+
+        elif split == "test":
+
+            test_path = os.path.join(path, "test.tsv")
+            
+            test_data = pd.read_csv(test_path, sep="\t")
+
+            self.corpus = test_data["text"].tolist()
+            self.labels = test_data["label"].tolist()
+
+            self.length = len(self.corpus)
+
+        elif split == "val":
+
+            val_path = os.path.join(path, "val.tsv")
+            
+            val_data = pd.read_csv(val_path, sep="\t")
+
+            self.corpus = val_data["text"].tolist()
+            self.labels = val_data["label"].tolist()
+
+            self.length = len(self.corpus)
         else:
             raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
         
-        return corpus, labels
+    def __len__(self):
+        return self.length
+    
+    def __getitem__(self, idx):
+        text = self.corpus[idx]
+        label = self.labels[idx]
 
-    def get_pytorch_dataset(self):
-        if self.dataset_type == "train":
-            corpus = self.train_data["text"].tolist()
-            labels = self.train_data["label"].tolist()
-        elif self.dataset_type == "test":
-            corpus = self.test_data["text"].tolist()
-            labels = self.test_data["label"].tolist()
-        elif self.dataset_type == "val":
-            corpus = self.val_data["text"].tolist()
-            labels = self.val_data["label"].tolist()
-        else:
-            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
-        
-        return EmotionsDataset(corpus, labels)
-
-
-
+        return text, label
 
 
 ##############################################################################################################################################
@@ -174,54 +127,53 @@ class Emotions(Data):
 ##############################################################################################################################################
 
 
-class AppReviewsDataset(MyDataset):
-    def __init__(self, data, labels):
-        super().__init__(data, labels)
+class AppReviewsDataset(Dataset):
 
-class AppReviews(Data):
+    def __init__(self, path, split="train"):
+        super().__init__()
 
-    def __init__(self, path, dataset_type="train"):
-        self.dataset_type = dataset_type
-        
-        train_path = os.path.join(path, "train.tsv")
-        test_path = os.path.join(path, "test.tsv")
-        val_path = os.path.join(path, "val.tsv")
+        if split == "train":
 
-        self.train_data = pd.read_csv(train_path, sep="\t")
-        self.test_data = pd.read_csv(test_path, sep="\t")
-        self.val_data = pd.read_csv(val_path, sep="\t")
+            train_path = os.path.join(path, "train.tsv")
 
-    def get_numpy_data(self):
-        if self.dataset_type == "train":
-            corpus = self.train_data["text"].tolist()
-            labels = self.train_data["label"].tolist()
-        elif self.dataset_type == "test":
-            corpus = self.test_data["text"].tolist()
-            labels = self.test_data["label"].tolist()
-        elif self.dataset_type == "val":
-            corpus = self.val_data["text"].tolist()
-            labels = self.val_data["label"].tolist()
+            train_data = pd.read_csv(train_path, sep="\t")
+
+            self.corpus = train_data["review"].tolist()
+            self.labels = train_data["star"].tolist()
+
+            self.length = len(self.corpus)
+
+        elif split == "test":
+
+            test_path = os.path.join(path, "test.tsv")
+            
+            test_data = pd.read_csv(test_path, sep="\t")
+
+            self.corpus = test_data["review"].tolist()
+            self.labels = test_data["star"].tolist()
+
+            self.length = len(self.corpus)
+
+        elif split == "val":
+
+            val_path = os.path.join(path, "val.tsv")
+            
+            val_data = pd.read_csv(val_path, sep="\t")
+
+            self.corpus = val_data["review"].tolist()
+            self.labels = val_data["star"].tolist()
+
+            self.length = len(self.corpus)
         else:
             raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
         
-        return corpus, labels
 
-    def get_pytorch_dataset(self):
-        if self.dataset_type == "train":
-            corpus = self.train_data["review"].tolist()
-            labels = self.train_data["star"].tolist()
-        elif self.dataset_type == "test":
-            corpus = self.test_data["review"].tolist()
-            labels = self.test_data["star"].tolist()
-        elif self.dataset_type == "val":
-            corpus = self.val_data["review"].tolist()
-            labels = self.val_data["star"].tolist()
-        else:
-            raise ValueError("dataset_type must be one of ['train', 'test', 'val']")
-        
-        return AppReviewsDataset(corpus, labels)
+    def __len__(self):
+        return self.length
     
 
-##############################################################################################################################################
+    def __getitem__(self, idx):
+        text = self.corpus[idx]
+        label = self.labels[idx]
 
-
+        return text, label
