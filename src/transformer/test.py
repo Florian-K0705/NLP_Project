@@ -8,7 +8,6 @@ import data.data_utils as data_utils
 def embedding(sentence):
 
     tokens = word_tokenize(sentence.lower())
-    print(tokens)
 
     embed_model = gensim.downloader.load('glove-wiki-gigaword-50')
     emb = embed_model[tokens]
@@ -42,21 +41,44 @@ class GoEmotionsTransformerModel(torch.nn.Module):
         return out4
 
 
+def train(model, dataloader, optimizer, criterion, device, num_classes, num_epochs=10):
+
+    oneHot = torch.eye(num_classes).to(device)
+
+    for epoch in range(num_epochs):
+        for i, (inputs, labels) in enumerate(dataloader):
+            inputs = inputs.to(device)
+
+            optimizer.zero_grad()
+
+            # TODO Embedding of the input
+
+
+            outputs = model(inputs)
+            loss = criterion(outputs, oneHot[labels])
+
+            loss.backward()
+            optimizer.step()
+
+            if (i + 1) % 100 == 0:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{len(dataloader)}], Loss: {loss.item():.4f}')
+
 
 
 
 def main():
 
-    model = GoEmotionsTransformerModel(num_heads=5, feature_dim=50)
-    goEmotionsDataset = data_utils.GoEmotionsDataset(path="/home/florian/Dokumente/Programmierung/Python/NLP/NLP_Project/data/goEmotions", split="train")
+    model = GoEmotionsTransformerModel(num_layers=2, num_heads=1, feature_dim=50)
+    goEmotionsDataset = data_utils.GoEmotionsDataset(path="/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/goEmotions/data", split="train")
     
-    example = embedding(goEmotionsDataset[0][0])
+    print(goEmotionsDataset[0])
+
+
+    i = 0
+    example = embedding(goEmotionsDataset[i][0])
+
 
     out = model(example.unsqueeze(dim=0))
-    print(out)
+    print(torch.argmax(out).item())
 
 
-
-
-if __name__== "__main__":
-    main()
