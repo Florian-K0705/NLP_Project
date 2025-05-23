@@ -1,7 +1,14 @@
 import torch
 from nltk.tokenize import word_tokenize
 import gensim.downloader
+
 import data.data_utils as data_utils
+import preprocessing.embedding as embedding
+from models import GoEmotionsBasicTransformerModel
+
+import pandas as pd
+from tqdm import tqdm
+from sklearn.metrics import accuracy_score, confusion_matrix
 
 
 
@@ -16,69 +23,76 @@ def embedding(sentence):
 
 
 
-class GoEmotionsTransformerModel(torch.nn.Module):
-
-    def __init__(self, num_layers = 6, num_heads = 8, feature_dim = 512, num_classes = 28):
-        super().__init__()
-
-        encoder_layer = torch.nn.TransformerEncoderLayer(feature_dim, nhead=num_heads, batch_first=True)
-
-        self.encoder = torch.nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=num_layers, enable_nested_tensor=False)
-        self.classifier = torch.nn.Linear(feature_dim, num_classes)
-
-    def forward(self, token_embeddings):
-        
-        # token_embedding should be of size (N, S, D). N = Batch size, S = Sequence length, D = dimension of embedding.
-
-        out1 = self.encoder(token_embeddings)
-
-        out2 = torch.sum(out1, dim=1)
-
-        out3 = self.classifier(out2)
-
-        out4 = torch.nn.functional.softmax(out3)
-
-        return out4
 
 
-def train(model, dataloader, optimizer, criterion, device, num_classes, num_epochs=10):
 
-    oneHot = torch.eye(num_classes).to(device)
+def train(model, dataset, optimizer, criterion, device, num_classes, num_epochs=10):
+
+    oneHot = torch.eye(num_classes)
+    model.train()
+    model.to(device)
 
     for epoch in range(num_epochs):
-        for i, (inputs, labels) in enumerate(dataloader):
-            inputs = inputs.to(device)
+        optimizer.zero_grad()
 
-            optimizer.zero_grad()
+        for text, label in tqdm(dataset):
+            
 
-            # TODO Embedding of the input
+            try:
+                embedded_text = embedding(text).unsqueeze(dim=0).to(device)
+            except:
+                continue
 
 
-            outputs = model(inputs)
-            loss = criterion(outputs, oneHot[labels])
+            outputs = model(embedded_text)
+            loss = criterion(outputs, oneHot[label].unsqueeze(dim=0).to(device))
 
             loss.backward()
-            optimizer.step()
 
-            if (i + 1) % 100 == 0:
-                print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{len(dataloader)}], Loss: {loss.item():.4f}')
 
+
+        optimizer.step()
+        print("loss", loss.item())
+
+
+def test(model, dataset, device):
+
+    model.eval()
+    model.to(device)
+
+    predicted_labels = []
+
+    with torch.no_grad():
+        for embedded_text, label in tqdm(dataset):
+
+            output = model(embedded_text.unsqueeze(dim=0).to(device))
+            _, predicted = torch.max(output.data, 1)
+
+            predicted_labels.append(predicted.item())
+
+    print("Accuracy: ", accuracy_score(dataset.labels, predicted_labels))
+    print("Confusion Matrix: ", confusion_matrix(dataset.labels, predicted_labels))
+
+
+
+    
 
 
 
 def main():
 
-    model = GoEmotionsTransformerModel(num_layers=2, num_heads=1, feature_dim=50)
-    goEmotionsDataset = data_utils.GoEmotionsDataset(path="/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/goEmotions/data", split="train")
+    model = GoEmotionsBasicTransformerModel(num_layers=1, num_heads=1, feature_dim=50, num_classes=2)
+
+
+    """
+    # Start training    
+    train(model, train_ds, 
+          optimizer=torch.optim.Adam(model.parameters(), lr=0.001), 
+          criterion=torch.nn.CrossEntropyLoss(), 
+          device="cuda", 
+          num_classes=2, 
+          num_epochs=1)
     
-    print(goEmotionsDataset[0])
-
-
-    i = 0
-    example = embedding(goEmotionsDataset[i][0])
-
-
-    out = model(example.unsqueeze(dim=0))
-    print(torch.argmax(out).item())
-
-
+    # Start testing
+    test(model, test_ds, device="cuda")
+    """
