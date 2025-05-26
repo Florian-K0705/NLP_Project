@@ -7,11 +7,11 @@ import fasttext
 import os
 
 
-def load_embedding_model(model_name):
+def load_embedding_model(model_name, path=None):
     if model_name == "glove":
         return GloVeEmbeddingModel()
     elif model_name == "fasttext":
-        return FastTextEmbeddingModel()
+        return FastTextEmbeddingModel(path)
     else:
         raise ValueError(f"Unknown embedding model: {model_name}")
 
@@ -21,7 +21,10 @@ class EmbeddingModel():
     def __init__(self):
         pass
 
-# Diese Methode gibt nur die Embeddings der einzelnen Wörter als "Liste" von Embeddingvektoren zurück (als Pytorch Tensor)
+    def __call__(self, sentence):
+        return self.get_sentence_embeddings(sentence)
+
+    # Diese Methode gibt nur die Embeddings der einzelnen Wörter als "Liste" von Embeddingvektoren zurück (als Pytorch Tensor)
     def get_sentence_embeddings(self, sentence):
         pass
 
@@ -38,18 +41,17 @@ class GloVeEmbeddingModel(EmbeddingModel):
     
 
 class FastTextEmbeddingModel(EmbeddingModel):
-    def __init__(self):
+    def __init__(self, path):
         super().__init__()
 
-        path = ""
-
         self.ft = fasttext.load_model(os.path.join(path, "cc.en.300.bin"))
+
 
     def get_sentence_embeddings(self, sentence):
         tokens = tokenize_text(sentence)
         emb = [self.ft.get_word_vector(token) for token in tokens]
-
-        embeddings = np.concatenate(emb)
+        
+        embeddings = np.stack(emb, axis=0)
 
         return torch.Tensor(embeddings)
 
