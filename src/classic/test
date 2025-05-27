@@ -1,0 +1,50 @@
+import sys
+import os
+
+# Damit Python den src-Pfad findet
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+from src.data_utils.datasets import GoEmotionsDataset
+
+import ast
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.metrics import classification_report
+
+# 🔹 Lade Datensätze
+data_path = "data"
+train_data = GoEmotionsDataset(path=data_path, split="train")
+test_data = GoEmotionsDataset(path=data_path, split="test")
+
+# 🔹 Extrahiere Texte und Labels
+X_train = train_data.corpus
+X_test = test_data.corpus
+
+# Label-Strings in echte Listen umwandeln, z. B. "['joy']" → ['joy']
+y_train = [ast.literal_eval(label) for label in train_data.labels]
+y_test = [ast.literal_eval(label) for label in test_data.labels]
+
+# 🔹 MultiLabel-Binarisierung (One-hot-Matrix)
+mlb = MultiLabelBinarizer()
+y_train_bin = mlb.fit_transform(y_train)
+y_test_bin = mlb.transform(y_test)
+
+# 🔹 Pipeline: TF-IDF + One-vs-Rest Linear SVM
+pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer(max_features=10000)),
+    ("clf", OneVsRestClassifier(LinearSVC()))
+])
+
+# 🔹 Trainiere das Modell
+print("Training läuft...")
+pipeline.fit(X_train, y_train_bin)
+print("Training abgeschlossen.\n")
+
+# 🔹 Vorhersage & Evaluation
+y_pred = pipeline.predict(X_test)
+
+print("Klassifikationsreport:")
+print(classification_report(y_test_bin, y_pred, target_names=mlb.classes_))
