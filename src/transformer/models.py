@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from transformers import AutoModelForMaskedLM, AutoTokenizer, BertForSequenceClassification
-import fasttext
+from transformers import AutoModel, AutoModelForMaskedLM, AutoTokenizer, BertForSequenceClassification, AutoModelForSequenceClassification
+from preprocessing.embedding import load_embedding_model
 
 class BasicTransformerModel(torch.nn.Module):
 
@@ -13,15 +13,18 @@ class BasicTransformerModel(torch.nn.Module):
         self.encoder = torch.nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=num_layers, enable_nested_tensor=False)
         self.classifier = torch.nn.Linear(feature_dim, num_classes)
 
-    def forward(self, text):
+        self.embedding_model = load_embedding_model("fasttext", path="/home/florian/Dokumente/Programme/H-BRS/1. Semester/Natural Language Processing/NLP_Project/data/fastText")
 
-        
-        # token_embedding should be of size (N, S, D). N = Batch size, S = Sequence length, D = dimension of embedding.
-        token_embeddings = None
+
+
+    def forward(self, text, device):
+
+        # token_embedding should be of size (N, S, D). N = Batch size, S = Sequence length, D = dimension of embedding. (1, S, D)
+        token_embeddings = self.embedding_model(text).unsqueeze(dim=0).to(device)
+
         out1 = self.encoder(token_embeddings)
 
-        #out2 = torch.sum(out1, dim=1) / s  # Average pooling over the sequence length
-        out2 = torch.mean(out1, dim=1)  # Alternative: Mean pooling over the sequence length
+        out2 = torch.mean(out1, dim=1)
 
         out3 = self.classifier(out2)
 
@@ -29,22 +32,24 @@ class BasicTransformerModel(torch.nn.Module):
 
         return out4
     
-class BertLiteModel(torch.nn.Module):
+
+class NeuroBertSmallModel(torch.nn.Module):
 
     def __init__(self, num_classes=28):
         super().__init__()
 
-        self.tokenizer = AutoTokenizer.from_pretrained("boltuix/bert-lite")
 
-        self.bert_model = AutoModelForMaskedLM.from_pretrained("boltuix/bert-lite")
+        self.tokenizer = AutoTokenizer.from_pretrained("boltuix/NeuroBERT-Small")
+        self.neuroBert_model = AutoModelForSequenceClassification.from_pretrained("boltuix/NeuroBERT-Small", num_labels=num_classes)
 
-        self.bert_model.cls.predictions.decoder = nn.Sequential(nn.Linear(256, 30522), nn.Linear(30522, num_classes), nn.Softmax())
 
-    def forward(self, text):
+    def forward(self, text, device):
         
         tokens = self.tokenizer(text, return_tensors="pt")
+        tokens.to(device)
 
-        out = self.bert_model(tokens["input_ids"])[0]
+        out0 = self.neuroBert_model(**tokens)
+        out = torch.nn.functional.softmax(out0.logits, dim=1)
 
         return out
     
@@ -70,6 +75,7 @@ class BertModel(torch.nn.Module):
         tokens.to(device)
 
         outputs = self.bert(**tokens)
+
         predictions = outputs.logits
 
         return predictions

@@ -23,7 +23,6 @@ def train(model, dataset, optimizer, batch_size, criterion, device, num_classes,
         running_loss = 0.0
 
         
-
         pbar = tqdm(torch.randperm(len(dataset)), colour='yellow')
         
         for i in pbar:
@@ -53,9 +52,54 @@ def train(model, dataset, optimizer, batch_size, criterion, device, num_classes,
         optimizer.step()
         optimizer.zero_grad()
 
-        pbar.set_description(f"Loss: {running_loss / batch_size:.4f}")
         loss_log.append(running_loss / c)
         c = 0
+
+
+
+          
+    plt.plot(loss_log)
+    plt.show()
+
+
+def train2(model, dataset, optimizer, criterion, device, num_classes, num_epochs=10):
+
+    oneHot = torch.eye(num_classes)
+    loss_log = []
+
+    model.train()
+    model.to(device)
+
+
+    pbar_epoch = tqdm(range(num_epochs), colour='blue')
+
+    for epoch in pbar_epoch:
+
+        running_loss = 0.0
+        
+
+        pbar = tqdm(torch.randperm(len(dataset)), colour='yellow')
+
+        optimizer.zero_grad()
+        
+        for i in pbar:
+
+            text = dataset[i.item()][0]
+            label = dataset[i.item()][1]
+
+
+            outputs = model(text, device=device)
+
+            loss = criterion(outputs, oneHot[label].unsqueeze(dim=0).to(device))
+
+            running_loss += loss.item()
+
+            loss.backward()
+
+
+        optimizer.step()
+
+        loss_log.append(running_loss / len(dataset))
 
 
 

@@ -1,3 +1,3 @@
-import transformer.test as trans_test
+import transformer.run as trans_test
 
 trans_test.main()

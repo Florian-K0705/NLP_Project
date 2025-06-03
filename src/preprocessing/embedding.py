@@ -75,4 +75,5 @@ class Embedding:
         emb = self.glove_wiki_gigaword_50_model[tokens]
 
         return torch.Tensor(emb)
+    
 

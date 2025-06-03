@@ -5,3 +5,16 @@ src/transformer/__pycache__/
 src/lstm/__pycache__/
 src/classic/__pycache__/
 src/preprocessing/__pycache__/
+src/transformer/pipeline/emotions/__pycache__
+src/transformer/pipeline/emotions/emotions_logs
+src/transformer/pipeline/emotions/emotions_results
+src/transformer/pipeline/emotions/fine_tuned_emotions
+src/transformer/pipeline/emotions/Run1
+src/transformer/pipeline/emotions/Run2
+
+
+src/transformer/pipeline/goEmotions/__pycache__
+src/transformer/pipeline/goEmotions/fine_tuned_goemotions
+src/transformer/pipeline/goEmotions/goEmotions_logs
+src/transformer/pipeline/goEmotions/goEmotions_results
+src/transformer/pipeline/goEmotions/Run1
