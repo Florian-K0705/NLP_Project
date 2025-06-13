@@ -1,12 +1,9 @@
 import torch
-from torch.nn.utils.rnn import pad_sequence
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-#import preprocessing.embedding as Embedder
-#import lstm.models as l
-#import data.data_utils as d
 
-def train_lstm(model, dataset, embedder, optimizer, batch_size, criterion, num_epochs=10):
+
+def train_lstm(model, dataset, embedder, optimizer, criterion, batch_size, num_epochs, pth_path):
     loss_log = []
     model.train()
 
@@ -21,37 +18,43 @@ def train_lstm(model, dataset, embedder, optimizer, batch_size, criterion, num_e
 
         for idx in pbar:
             text, label = dataset[idx.item()]
-            embedded = embedder.glove_embedding(text)
-            
-
-
-            batch_texts.append(torch.stack(embedded))  # [seq_len, emb_dim]
             batch_labels.append(label)
 
+            embedded = embedder.glove_embedding(text) # torch.shape([64, 50]) ([seq_len, emb_dim])
+            batch_texts.append(embedded)  
+            
+            #Batch ready, do what has to be done
             if len(batch_texts) == batch_size:
-                # Padding
-                padded_batch = pad_sequence(batch_texts, batch_first=True)  # [B, max_len, emb_dim]
-                labels = torch.tensor(batch_labels, dtype=torch.long)
-                # Forward
-                outputs = model(padded_batch)  # [B, num_classes]
                 
-                loss = criterion(outputs, labels)
-                loss.backward()
+                batch_tensor = torch.stack(batch_texts) # torch.shape([ batch_size, seq_len, emb_dim])
+                label_tensor = torch.tensor(batch_labels, dtype=torch.long)
 
-                optimizer.step()
                 optimizer.zero_grad()
+
+                outputs = model(batch_tensor)  # torch.shape( [batch_size, output_dim ])
+                
+                loss = criterion(outputs, label_tensor)
+                loss.backward()
+                optimizer.step()
+
 
                 running_loss += loss.item()
                 count += 1
 
-                pbar.set_description(f"Loss: {running_loss / count:.4f}")
-
+                #bereie nächste Batch vor:
                 batch_texts = []
                 batch_labels = []
+            #Batch "vorbei"
+                
 
-        if count > 0:
-            loss_log.append(running_loss / count)
+               
+        pbar.set_description(f"Loss: {running_loss / count:.4f}")
 
+        torch.save(model.state_dict(), pth_path)
+
+        loss_log.append(running_loss / count)
+       
+    
     plt.plot(loss_log)
     plt.title("Training Loss")
     plt.xlabel("Epoch")

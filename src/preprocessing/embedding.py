@@ -1,9 +1,5 @@
 import torch
-
-#import gensim.downloader.load as l
 from preprocessing.tokenization import tokenize_text
-
-
 
 class Embedding:
 
@@ -24,14 +20,11 @@ class Embedding:
                 self.word_to_vec[word] = vec
 
 
-
     def glove_embedding(self, sentence):
         
-
-
         tokens = tokenize_text(sentence)
 
-        emb = [self.SOS]
+        emb =  [self.SOS]
         for index, token in enumerate(tokens):
             if index == self.max_length - 2:
                 break
@@ -44,6 +37,5 @@ class Embedding:
             emb.append(self.PAD)
 
         emb.append(self.EOS)
+        emb = torch.stack(emb)
         return emb
-
-

@@ -1,4 +1,4 @@
 import lstm.run as run
 
 
-run.run()
+run.run("test", "Emotions")
