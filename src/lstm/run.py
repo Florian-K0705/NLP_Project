@@ -1,10 +1,11 @@
 import torch
-import lstm.models
+import lstm.models as models
 import preprocessing.embedding as Embedder
 import lstm
 
 import lstm.train as train
 import lstm.test as test
+import lstm.mapping as s
 import data.data_utils as d
 
 path = r"C:\Users\bberg\Documents\Natural Language Processing Data"
@@ -16,18 +17,18 @@ def run(mode, dataset):
 
     if dataset == "Emotions":
         train_ds = d.EmotionsDataset(path + r"\Emotions", split="train")
-        test_ds = d.EmotionsDataset(path + r"\Emotions", split="train")
-        pth_path = path + r"\Emotions_model.pth"
+        test_ds = d.EmotionsDataset(path + r"\Emotions", split="val")
+        pth_path = path + r"\Emotions_model_2.pth"
         output_dim = 6
     elif dataset == "goEmotions":
         train_ds =  d.GoEmotionsDataset(path + r"\goEmotions", split="train")
-        test_ds = d.GoEmotionsDataset(path + r"\goEmotions", split="train")
-        pth_path = path + r"\goEmotions_model.pth"
+        test_ds = d.GoEmotionsDataset(path + r"\goEmotions", split="val")
+        pth_path = path + r"\goEmotions_model_2.pth"
         output_dim = 28
     elif dataset == "AppReview":
         train_ds = d.AppReviewsDataset(path + r"\AppReviews", split="train")       
-        test_ds = d.AppReviewsDataset(path + r"\AppReviews", split="train")
-        pth_path = path + r"\AppReview_model.pth"
+        test_ds = d.AppReviewsDataset(path + r"\AppReviews", split="val")
+        pth_path = path + r"\AppReview_model_2.pth"
         output_dim = 5
     else:
         print("Kein Dataset angegeben")
@@ -35,11 +36,11 @@ def run(mode, dataset):
 
     embedding_dim = 50
     batch_size = 100
-    sequenz_size = 64
-    num_epochs = 5
+    sequenz_size = 128
+    num_epochs = 100
 
     embedder = Embedder.Embedding(glov_path, embedding_dim, sequenz_size)
-    model = lstm.models.LSTMClassifier(embedding_dim=embedding_dim, output_dim=output_dim)
+    model = models.LSTMClassifier(embedding_dim=embedding_dim, output_dim=output_dim)
 
     try:
         model.load_state_dict(torch.load(pth_path, weights_only=True))
@@ -57,13 +58,17 @@ def run(mode, dataset):
 
     elif mode == "test":
         test.test(model, embedder, test_ds)
-
+    elif mode =="mapping":
+        ds = d.GoEmotionsDataset(path + r"\goEmotions", split="train")
+        s.simple_label_mapping(model, embedder, ds, 28)
+        ds = d.EmotionsDataset(path + r"\Emotions", split="train") 
+        s.simple_label_mapping(model, embedder, ds,6)
     else:
         with torch.no_grad():
             while True:
                 text = input("WHAT:")
-                emb = torch.stack(embedder.glove_embedding(text))
-            
+                emb = embedder.glove_embedding(text).unsqueeze(0)
+
                 predict = torch.argmax(model(emb))
                 print(predict.item())
 

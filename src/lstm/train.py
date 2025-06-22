@@ -47,9 +47,8 @@ def train_lstm(model, dataset, embedder, optimizer, criterion, batch_size, num_e
             #Batch "vorbei"
                 
 
-               
-        pbar.set_description(f"Loss: {running_loss / count:.4f}")
 
+        tqdm.write(f"Epoch {epoch+1}, Loss: {running_loss / count:.4f}")
         torch.save(model.state_dict(), pth_path)
 
         loss_log.append(running_loss / count)

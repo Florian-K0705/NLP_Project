@@ -140,6 +140,7 @@ class AppReviewsDataset(Dataset):
 
             self.corpus = train_data["review"].tolist()
             self.labels = train_data["star"].tolist()
+            self.labels = [label - 1 for label in self.labels]
 
             self.length = len(self.corpus)
 
@@ -151,7 +152,7 @@ class AppReviewsDataset(Dataset):
 
             self.corpus = test_data["review"].tolist()
             self.labels = test_data["star"].tolist()
-
+            self.labels = [label - 1 for label in self.labels]
             self.length = len(self.corpus)
 
         elif split == "val":
@@ -162,6 +163,7 @@ class AppReviewsDataset(Dataset):
 
             self.corpus = val_data["review"].tolist()
             self.labels = val_data["star"].tolist()
+            self.labels = [label - 1 for label in self.labels]
 
             self.length = len(self.corpus)
         else:
